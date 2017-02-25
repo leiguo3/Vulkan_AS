@@ -1,11 +1,10 @@
 # Vulkan_Android_Studio
 Sascha Willems' Vulkan demos run with Android Studio
 
-\n\n
 
 Known issues:
 
-1. NDK build fails with long project path on windows\n
+1. NDK build fails with long project path on windows__
 https://code.google.com/p/android/issues/detail?id=75360\n
 error info:\n
 error: error opening '.../.../xxx.o.d': No such file or directory\n
