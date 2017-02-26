@@ -1,5 +1,5 @@
 # Vulkan Android Studio
-Sascha Willems' Vulkan demos run with Android Studio
+Sascha Willems' Vulkan demos build with Android Studio
 
 
 Known issues:
