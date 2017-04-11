@@ -22,6 +22,10 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanDevice.hpp"
 
+#if defined(__ANDROID__)
+#include "VulkanAndroid.h"
+#endif
+
 #include "../external/stb/stb_font_consolas_24_latin1.inl"
 
 // Defines for the STB font used
@@ -81,6 +85,8 @@ public:
 	bool visible = true;
 	bool invalidated = false;
 
+	float scale = 1.0f;
+
 	std::vector<VkCommandBuffer> cmdBuffers;
 
 	/**
@@ -113,6 +119,22 @@ public:
 
 		this->frameBufferWidth = framebufferwidth;
 		this->frameBufferHeight = framebufferheight;
+
+#if defined(__ANDROID__)		
+		// Scale text on Android devices with high DPI
+		if (vks::android::screenDensity >= ACONFIGURATION_DENSITY_XXHIGH) {
+			LOGD("XXHIGH");
+			scale = 2.0f;
+		} 
+		else if (vks::android::screenDensity >= ACONFIGURATION_DENSITY_XHIGH) {
+			LOGD("XHIGH");
+			scale = 1.5f;
+		} 
+		else if (vks::android::screenDensity >= ACONFIGURATION_DENSITY_HIGH) {
+			LOGD("HIGH");
+			scale = 1.25f;
+		};
+#endif
 
 		cmdBuffers.resize(framebuffers.size());
 		prepareResources();
@@ -551,8 +573,14 @@ public:
 	{
 		assert(vertexBuffer.mapped != nullptr);
 
-		const float charW = 1.5f / *frameBufferWidth;
-		const float charH = 1.5f / *frameBufferHeight;
+		if (align == alignLeft) {
+			x *= scale;
+		};
+
+		y *= scale;
+
+		const float charW = (1.5f * scale) / *frameBufferWidth;
+		const float charH = (1.5f * scale) / *frameBufferHeight;
 
 		float fbW = (float)*frameBufferWidth;
 		float fbH = (float)*frameBufferHeight;

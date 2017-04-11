@@ -24,6 +24,7 @@
 
 #include <android/log.h>
 #include <android_native_app_glue.h>
+#include <android/configuration.h>
 #include <memory>
 
 // Missing from the NDK
@@ -151,9 +152,23 @@ extern PFN_vkCmdCopyQueryPoolResults vkCmdCopyQueryPoolResults;
 extern PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 extern PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
 
-bool loadVulkanLibrary();
-void loadVulkanFunctions(VkInstance instance);
-void freeVulkanLibrary();
+namespace vks
+{
+	namespace android
+	{
+		/* @brief Touch control thresholds from Android NDK samples */
+		const int32_t DOUBLE_TAP_TIMEOUT = 300 * 1000000;
+		const int32_t DOUBLE_TAP_SLOP = 100;
+
+		/** @brief Density of the device screen (in DPI) */
+		extern int32_t screenDensity;
+
+		bool loadVulkanLibrary();
+		void loadVulkanFunctions(VkInstance instance);
+		void freeVulkanLibrary();
+		void getDeviceConfig();
+	}
+}
 
 #endif
 

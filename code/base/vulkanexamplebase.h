@@ -17,7 +17,8 @@
 #include <android/native_activity.h>
 #include <android/asset_manager.h>
 #include <android_native_app_glue.h>
-#include "vulkanandroid.h"
+#include <sys/system_properties.h>
+#include "VulkanAndroid.h"
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
 #include <wayland-client.h>
 #elif defined(__linux__)
@@ -43,8 +44,8 @@
 
 #include "VulkanInitializers.hpp"
 #include "VulkanDevice.hpp"
-#include "vulkanswapchain.hpp"
-#include "vulkantextoverlay.hpp"
+#include "VulkanSwapChain.hpp"
+#include "VulkanTextOverlay.hpp"
 #include "camera.hpp"
 
 class VulkanExampleBase
@@ -63,8 +64,6 @@ private:
 	// Called if the window is resized and some resources have to be recreatesd
 	void windowResize();
 protected:
-	// Last frame time, measured using a high performance timer (if available)
-	float frameTimer = 1.0f;
 	// Frame counter to display fps
 	uint32_t frameCounter = 0;
 	uint32_t lastFPS = 0;
@@ -89,8 +88,6 @@ protected:
 	/** @brief Logical device, application's view of the physical device (GPU) */
 	// todo: getter? should always point to VulkanDevice->device
 	VkDevice device;
-	/** @brief Encapsulated physical and logical vulkan device */
-	vks::VulkanDevice *vulkanDevice;
 	// Handle to the device graphics queue that command buffers are submitted to
 	VkQueue queue;
 	// Depth buffer format (selected during Vulkan initialization)
@@ -126,14 +123,18 @@ protected:
 		// Text overlay submission and execution
 		VkSemaphore textOverlayComplete;
 	} semaphores;
-	// Simple texture loader
-	//vks::tools::VulkanTextureLoader *textureLoader = nullptr;
-	// Returns the base asset path (for shaders, models, textures) depending on the os
-	const std::string getAssetPath();
 public: 
 	bool prepared = false;
 	uint32_t width = 1280;
 	uint32_t height = 720;
+
+	/** @brief Last frame time measured using a high performance timer (if available) */
+	float frameTimer = 1.0f;
+	/** @brief Returns os specific base asset path (for shaders, models, textures) */
+	const std::string getAssetPath();
+
+	/** @brief Encapsulated physical and logical vulkan device */
+	vks::VulkanDevice *vulkanDevice;
 
 	/** @brief Example settings that can be changed e.g. by command line arguments */
 	struct Settings {
@@ -197,7 +198,15 @@ public:
 #elif defined(__ANDROID__)
 	// true if application has focused, false if moved to background
 	bool focused = false;
-
+	struct TouchPos {
+		int32_t x;
+		int32_t y;
+	} touchPos;
+	bool touchDown = false;
+	double touchTimer = 0.0;
+	int64_t lastTapTime = 0;
+	/** @brief Product model and manufacturer of the Android device (via android.Product*) */
+	std::string androidProduct;
 #elif defined(VK_USE_PLATFORM_WAYLAND_KHR)
 	wl_display *display = nullptr;
 	wl_registry *registry = nullptr;
@@ -325,6 +334,9 @@ public:
 	// Can be overriden in derived class to setup a custom render pass (e.g. for MSAA)
 	virtual void setupRenderPass();
 
+	/** @brief (Virtual) called after the physical device features have been read, used to set features to enable on the device */
+	virtual void getEnabledFeatures();
+
 	// Connect and prepare the swap chain
 	void initSwapchain();
 	// Create swap chain images
@@ -412,6 +424,7 @@ void android_main(android_app* state)																\
 	state->onAppCmd = VulkanExample::handleAppCommand;												\
 	state->onInputEvent = VulkanExample::handleAppInput;											\
 	androidApp = state;																				\
+	vks::android::getDeviceConfig();																\
 	vulkanExample->renderLoop();																	\
 	delete(vulkanExample);																			\
 }

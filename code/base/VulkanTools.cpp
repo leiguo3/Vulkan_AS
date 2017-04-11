@@ -228,14 +228,44 @@ namespace vks
 			setImageLayout(cmdbuffer, image, aspectMask, oldImageLayout, newImageLayout, subresourceRange);
 		}
 
+		void insertImageMemoryBarrier(
+			VkCommandBuffer cmdbuffer,
+			VkImage image,
+			VkAccessFlags srcAccessMask,
+			VkAccessFlags dstAccessMask,
+			VkImageLayout oldImageLayout,
+			VkImageLayout newImageLayout,
+			VkPipelineStageFlags srcStageMask,
+			VkPipelineStageFlags dstStageMask,
+			VkImageSubresourceRange subresourceRange)
+		{
+			VkImageMemoryBarrier imageMemoryBarrier = vks::initializers::imageMemoryBarrier();
+			imageMemoryBarrier.srcAccessMask = srcAccessMask;
+			imageMemoryBarrier.dstAccessMask = dstAccessMask;
+			imageMemoryBarrier.oldLayout = oldImageLayout;
+			imageMemoryBarrier.newLayout = newImageLayout;
+			imageMemoryBarrier.image = image;
+			imageMemoryBarrier.subresourceRange = subresourceRange;
+
+			vkCmdPipelineBarrier(
+				cmdbuffer,
+				srcStageMask,
+				dstStageMask,
+				0,
+				0, nullptr,
+				0, nullptr,
+				1, &imageMemoryBarrier);
+		}
+
 		void exitFatal(std::string message, std::string caption)
 		{
-#ifdef _WIN32
+#if defined(_WIN32)
 			MessageBox(NULL, message.c_str(), caption.c_str(), MB_OK | MB_ICONERROR);
+#elif defined(__ANDROID__)	
+			LOGE("Fatal error: %s", message.c_str());
 #else
-			// TODO : Linux
-#endif
 			std::cerr << message << "\n";
+#endif
 			exit(1);
 		}
 
